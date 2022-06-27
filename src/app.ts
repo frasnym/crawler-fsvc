@@ -1,8 +1,9 @@
-import { generateTargetResult, generateTargetUrls } from './libs/puppeteer'
+import { TokopediaCrawler } from './libs/puppeteer'
 ;(async () => {
   try {
-    await generateTargetUrls()
-    await generateTargetResult()
+    const topedCrawler = new TokopediaCrawler()
+    await topedCrawler.generateTargetUrls()
+    await topedCrawler.generateTargetResult()
   } catch (error) {
     console.error(error)
   }
