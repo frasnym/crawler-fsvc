@@ -1,6 +1,7 @@
 import { Server } from 'http'
 import { envVars } from './config/env-vars'
 import { logger } from './config/logger'
+import {} from './app'
 
 console.log(envVars)
 

@@ -1,10 +1,10 @@
 {
-  "name": "furazoo-service-boilerplate-node",
+  "name": "crawler-fsvc",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn ./src/index.ts",
+    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn ./src/app.ts",
     "docker:dev": "docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up",
     "lint": "npx eslint **/*.ts",
     "lint:fix": "npx prettier-eslint **/*.ts --write",
@@ -13,17 +13,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frasnym/furazoo-service-boilerplate-node.git"
+    "url": "git+https://github.com/frasnym/crawler-fsvc.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/frasnym/furazoo-service-boilerplate-node/issues"
+    "url": "https://github.com/frasnym/crawler-fsvc/issues"
   },
-  "homepage": "https://github.com/frasnym/furazoo-service-boilerplate-node#readme",
+  "homepage": "https://github.com/frasnym/crawler-fsvc#readme",
   "devDependencies": {
     "@types/node": "^18.0.0",
+    "@types/puppeteer": "^5.4.6",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "cross-env": "^7.0.3",
@@ -42,6 +43,7 @@
   "dependencies": {
     "dotenv": "^16.0.1",
     "joi": "^17.6.0",
+    "puppeteer": "^15.0.0",
     "winston": "^3.7.2"
   }
 }
