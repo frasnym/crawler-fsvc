@@ -1,9 +1,9 @@
 import puppeteer from 'puppeteer'
 import fs from 'fs'
+import { logger } from '../config/logger'
 
 const mainUrl =
   'https://www.tokopedia.com/search?shop_tier=2&page={pageNumber}&q=apotek&st=shop'
-const targetPage = 68
 /**
  * Ref:
  * https://puppeteer.github.io/puppeteer/docs/puppeteer.page.emulate/
@@ -13,6 +13,9 @@ const iPhoneDevice = puppeteer.devices['iPhone 6']
 
 export async function getTargetUrls (): Promise<void> {
   const targetUrls: (string | null)[] = []
+  const fileName = `urls-${new Date().getFullYear()}${String(
+    new Date().getMonth() + 1
+  ).padStart(2, '0')}${String(new Date().getDate() + 1).padStart(2, '0')}.json`
 
   try {
     const browser = await puppeteer.launch({ headless: true }) // default is true
@@ -22,11 +25,12 @@ export async function getTargetUrls (): Promise<void> {
       'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36'
     )
 
-    for (let currentPage = 1; currentPage <= targetPage; currentPage++) {
-      const url = mainUrl.replace('{pageNumber}', currentPage.toString())
+    let currentPage = 1
+    let currentPageResult = 0
 
+    do {
+      const url = mainUrl.replace('{pageNumber}', currentPage.toString())
       await page.goto(url, { waitUntil: 'networkidle2' })
-      console.log(`Page ${currentPage} is loaded`)
 
       // Get all store href
       const urls = await page.evaluate(() => {
@@ -34,18 +38,25 @@ export async function getTargetUrls (): Promise<void> {
           a.getAttribute('href')
         )
       })
-      console.log('urls', urls)
+      currentPageResult = urls.length
+      logger.info(
+        `Inspecting page ${currentPage}: Got ${currentPageResult} result`
+      )
+
       targetUrls.push(...urls)
-    }
+      currentPage++
+    } while (currentPageResult > 0)
 
     await browser.close()
 
-    console.log('targetUrls', targetUrls)
-
-    fs.writeFileSync('urls.json', JSON.stringify(targetUrls))
-    console.log('JSON data is saved.')
+    fs.writeFileSync(fileName, JSON.stringify(targetUrls))
+    logger.info('Result is saved.')
   } catch (error) {
     console.error(error)
+    logger.error(error)
+
+    fs.writeFileSync(fileName, JSON.stringify(targetUrls))
+    logger.info('Result is saved.')
   }
 }
 
