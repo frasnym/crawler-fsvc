@@ -1,8 +1,8 @@
-import { generateTargetResult, getTargetUrls } from './libs/puppeteer'
+import { generateTargetResult, generateTargetUrls } from './libs/puppeteer'
 ;(async () => {
   try {
-    await getTargetUrls()
-    // await generateTargetResult()
+    await generateTargetUrls()
+    await generateTargetResult()
   } catch (error) {
     console.error(error)
   }
