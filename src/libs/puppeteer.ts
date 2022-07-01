@@ -5,6 +5,11 @@ import BBPromise from 'bluebird'
 import { envVars } from '../config/env-vars'
 import { NotionApi } from './notion'
 import { ApotekResult } from '../types/toped'
+import {
+  FILE_NAME_FOR_URL,
+  FILE_NAME_RESULT_FILTERED,
+  FILE_NAME_RESULT_RAW
+} from '../utils/constant'
 
 export class TokopediaCrawler {
   private defaultUserAgent =
@@ -21,7 +26,7 @@ export class TokopediaCrawler {
     new Date().getMonth() + 1
   ).padStart(2, '0')}${String(new Date().getDate() + 1).padStart(2, '0')}`
 
-  private targetUrlFileName = `./results/${this.today}-urls.json`
+  private targetUrlFileName = FILE_NAME_FOR_URL
 
   public async generateTargetUrls (): Promise<void> {
     const mainUrl =
@@ -73,8 +78,9 @@ export class TokopediaCrawler {
   public async generateTargetResult (): Promise<void> {
     console.time('generateTargetResult')
 
-    const fileName = `./results/${this.today}-urlsResult.json`
-    const tempResult: ApotekResult[] = [] // result container that will be saved either success or error
+    // const fileName = `./results/${this.today}-urlsResult.json`
+    const tempResultRaw: ApotekResult[] = [] // result container that will be saved either success or error
+    const resultFiltered: ApotekResult[] = [] // result container that will be saved either success or error
 
     try {
       // Read the generated urls from file
@@ -91,19 +97,29 @@ export class TokopediaCrawler {
       await triggerPage.close()
 
       // Create a promise call with limited concurrency
-      const result = await BBPromise.map(
+      const resultRaw = await BBPromise.map(
         urls,
         async (url) => {
           const lastOnline = await this.getLastOnline(url, browser)
-          tempResult.push({ url, lastOnline }) // send temporary result
-          return { url, lastOnline }
+          const retVal = { url, lastOnline }
+
+          tempResultRaw.push(retVal) // send temporary result
+          if (lastOnline?.toLocaleLowerCase().includes('hari')) {
+            resultFiltered.push(retVal)
+          }
+
+          return retVal
         },
         { concurrency: 5 }
       )
 
       await browser.close()
 
-      fs.writeFileSync(fileName, JSON.stringify(result))
+      fs.writeFileSync(FILE_NAME_RESULT_RAW, JSON.stringify(resultRaw))
+      fs.writeFileSync(
+        FILE_NAME_RESULT_FILTERED,
+        JSON.stringify(resultFiltered)
+      )
       logger.info('Result is saved.')
 
       console.timeEnd('generateTargetResult')
@@ -111,7 +127,7 @@ export class TokopediaCrawler {
       console.error(error)
       logger.error(error)
 
-      fs.writeFileSync(this.targetUrlFileName, JSON.stringify(tempResult))
+      fs.writeFileSync(FILE_NAME_RESULT_RAW, JSON.stringify(tempResultRaw))
       logger.info('Result is saved.')
     }
   }
