@@ -1,11 +1,11 @@
 import { Server } from 'http'
 import { envVars } from './config/env-vars'
 import { logger } from './config/logger'
-import {} from './app'
+import app from './app'
 
-console.log(envVars)
-
-let server: Server
+const server: Server = app.listen(envVars.port, () =>
+  logger.info(`Application is up and running on port ${envVars.port}`)
+)
 
 const exitHandler = () => {
   if (server) {
