@@ -2,11 +2,10 @@ import puppeteer from 'puppeteer'
 import fs from 'fs'
 import { logger } from '../config/logger'
 import BBPromise from 'bluebird'
+import { envVars } from '../config/env-vars'
+import { NotionApi } from './notion'
+import { ApotekResult } from '../types/toped'
 
-type Result = {
-  url: string
-  lastOnline: string | null
-}
 export class TokopediaCrawler {
   private defaultUserAgent =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36'
@@ -59,23 +58,23 @@ export class TokopediaCrawler {
       } while (currentPageResult > 0)
 
       await browser.close()
-
-      fs.writeFileSync(this.targetUrlFileName, JSON.stringify(targetUrls))
-      logger.info('Result is saved.')
     } catch (error) {
       console.error(error)
       logger.error(error)
-
-      fs.writeFileSync(this.targetUrlFileName, JSON.stringify(targetUrls))
-      logger.info('Result is saved.')
     }
+
+    await this.storeResult(
+      'url',
+      JSON.stringify(targetUrls),
+      this.targetUrlFileName
+    )
   }
 
   public async generateTargetResult (): Promise<void> {
     console.time('generateTargetResult')
 
     const fileName = `./results/${this.today}-urlsResult.json`
-    const tempResult: Result[] = [] // result container that will be saved either success or error
+    const tempResult: ApotekResult[] = [] // result container that will be saved either success or error
 
     try {
       // Read the generated urls from file
@@ -147,5 +146,38 @@ export class TokopediaCrawler {
 
       return null
     }
+  }
+
+  private async storeResult (type: 'url', result: string, fileName: string) {
+    if (envVars.isStoreLocal) {
+      fs.writeFileSync(fileName, result)
+      logger.info('Result is saved locally.')
+    }
+
+    const typeMap = {
+      url: envVars.notion.blocks.tkpApoJsonUrlId
+    }
+
+    const notion = new NotionApi(envVars.notion.accessToken)
+    await notion.updateBlock({
+      block_id: typeMap[type],
+      code: {
+        rich_text: [
+          {
+            text: { content: result }
+          }
+        ],
+        caption: [
+          {
+            text: {
+              content: `Last Updated: ${new Intl.DateTimeFormat('id-ID', {
+                dateStyle: 'full',
+                timeStyle: 'long'
+              }).format(new Date())}`
+            }
+          }
+        ]
+      }
+    })
   }
 }
